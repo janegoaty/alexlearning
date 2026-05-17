@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alex's Times Tables ⭐</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { min-height: 100%; }
+  body { font-family: 'Nunito', 'Comic Sans MS', system-ui, sans-serif; }
+  @keyframes popIn {
+    0%   { transform: scale(0.3); opacity: 0; }
+    60%  { transform: scale(1.25); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%     { transform: translateX(-8px); }
+    40%     { transform: translateX(8px); }
+    60%     { transform: translateX(-5px); }
+    80%     { transform: translateX(5px); }
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.08); }
+  }
+  .pop-in  { animation: popIn  0.35s cubic-bezier(.36,.07,.19,.97) forwards; }
+  .shake   { animation: shake  0.4s ease; }
+  .pulse   { animation: pulse  0.8s infinite; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  button { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const TABLE_COLORS = [
+  '#FF6B6B','#FF9F43','#FECA57','#1DD1A1',
+  '#48DBFB','#54A0FF','#5F27CD','#FF6B81',
+  '#00D2D3','#6C5CE7','#A29BFE','#fd79a8'
+];
+const TABLE_DARKS = [
+  '#C0392B','#E67E22','#F39C12','#00876a',
+  '#0097A7','#2980B9','#341F97','#c0392b',
+  '#006266','#4834D4','#6C5CE7','#b5006b'
+];
+
+const genGameQ = (tables, recent = []) => {
+  const recentKeys = recent.map(q => `${q.a}x${q.b}`);
+  let q, attempts = 0;
+  do {
+    const b = tables[Math.floor(Math.random() * tables.length)];
+    const a = Math.floor(Math.random() * 12) + 1;
+    q = { a, b };
+    attempts++;
+  } while (recentKeys.includes(`${q.a}x${q.b}`) && attempts < 50);
+  return q;
+};
+
+const genPracticeQs = (table, order) => {
+  const qs = Array.from({ length: 12 }, (_, i) => ({ a: i + 1, b: table }));
+  return order === 'random' ? [...qs].sort(() => Math.random() - 0.5) : qs;
+};
+
+const F = { fontFamily: "'Nunito', 'Comic Sans MS', system-ui, sans-serif" };
+
+function Btn3D({ onClick, bg, shadow, color = 'white', children, style = {}, disabled = false }) {
+  const base = {
+    ...F, background: disabled ? '#ccc' : bg, color: disabled ? '#999' : color,
+    border: 'none', borderRadius: '20px', cursor: disabled ? 'not-allowed' : 'pointer',
+    fontWeight: 900, boxShadow: disabled ? 'none' : `0 7px 0 ${shadow}`,
+    transition: 'transform 0.1s, box-shadow 0.1s', ...style
+  };
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={base}
+      onMouseDown={e => { if (!disabled) { e.currentTarget.style.transform = 'translateY(4px)'; e.currentTarget.style.boxShadow = `0 3px 0 ${shadow}`; }}}
+      onMouseUp={e => { if (!disabled) { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 7px 0 ${shadow}`; }}}
+      onMouseLeave={e => { if (!disabled) { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 7px 0 ${shadow}`; }}}
+    >{children}</button>
+  );
+}
+
+function App() {
+  const [screen, setScreen]               = useState('mode');
+  const [mode, setMode]                   = useState(null);
+  const [selectedTables, setSelectedTables] = useState([]);
+  const [practiceOrder, setPracticeOrder] = useState(null);
+  const [questions, setQuestions]         = useState([]);
+  const [qIdx, setQIdx]                   = useState(0);
+  const [answer, setAnswer]               = useState('');
+  const [tries, setTries]                 = useState(0);
+  const [feedback, setFeedback]           = useState(null);
+  const [showAnswer, setShowAnswer]       = useState(false);
+  const [score, setScore]                 = useState({ correct: 0, total: 0 });
+  const [timeLeft, setTimeLeft]           = useState(60);
+  const [gameActive, setGameActive]       = useState(false);
+  const [confirmQuit, setConfirmQuit]     = useState(false);
+  const inputRef  = useRef(null);
+  const timerRef  = useRef(null);
+  const cq = questions[Math.min(qIdx, questions.length - 1)];
+
+  useEffect(() => {
+    if (!gameActive) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) {
+          clearInterval(timerRef.current);
+          setGameActive(false);
+          setTimeout(() => setScreen('results'), 400);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [gameActive]);
+
+  const startQuiz = (order) => {
+    const ord = order || practiceOrder;
+    if (order) setPracticeOrder(order);
+    setScore({ correct: 0, total: 0 });
+    setQIdx(0); setAnswer(''); setTries(0); setFeedback(null); setShowAnswer(false);
+    if (mode === 'practice') {
+      setQuestions(genPracticeQs(selectedTables[0], ord));
+    } else {
+      setQuestions([genGameQ(selectedTables, [])]);
+      setTimeLeft(60);
+      setGameActive(true);
+    }
+    setScreen('quiz');
+    setTimeout(() => inputRef.current && inputRef.current.focus(), 300);
+  };
+
+  const advancePractice = () => {
+    if (qIdx >= questions.length - 1) { setScreen('results'); return; }
+    setQIdx(i => i + 1); setAnswer(''); setTries(0); setFeedback(null); setShowAnswer(false);
+    setTimeout(() => inputRef.current && inputRef.current.focus(), 100);
+  };
+
+  const handleSubmit = () => {
+    if (!answer.trim() || feedback === 'correct' || feedback === 'revealed') return;
+    const val = parseInt(answer);
+    if (isNaN(val)) return;
+    const isCorrect = val === cq.a * cq.b;
+
+    if (mode === 'game') {
+      setScore(s => ({ correct: s.correct + (isCorrect ? 1 : 0), total: s.total + 1 }));
+      setFeedback(isCorrect ? 'correct' : 'wrong');
+      setTimeout(() => {
+        setFeedback(null); setAnswer('');
+        setQuestions(prev => [...prev, genGameQ(selectedTables, prev.slice(-3))]);
+        setQIdx(i => i + 1);
+        inputRef.current && inputRef.current.focus();
+      }, 550);
+    } else {
+      if (isCorrect) {
+        setScore(s => ({ correct: s.correct + 1, total: s.total + 1 }));
+        setFeedback('correct');
+        setTimeout(advancePractice, 1300);
+      } else {
+        const newTries = tries + 1;
+        setTries(newTries);
+        if (newTries >= 3) {
+          setScore(s => ({ ...s, total: s.total + 1 }));
+          setFeedback('revealed'); setShowAnswer(true);
+          setTimeout(advancePractice, 2800);
+        } else {
+          setFeedback('wrong');
+          setTimeout(() => { setFeedback(null); setAnswer(''); inputRef.current && inputRef.current.focus(); }, 900);
+        }
+      }
+    }
+  };
+
+  const reset = () => {
+    clearInterval(timerRef.current); setGameActive(false);
+    setScreen('mode'); setMode(null); setSelectedTables([]);
+    setQuestions([]); setQIdx(0); setAnswer(''); setTries(0);
+    setFeedback(null); setShowAnswer(false);
+    setScore({ correct: 0, total: 0 }); setTimeLeft(60);
+  };
+
+  const toggleTable = n => setSelectedTables(p => p.includes(n) ? p.filter(x => x !== n) : [...p, n]);
+
+  /* ── MODE ── */
+  if (screen === 'mode') return (
+    <div style={{ ...F, minHeight:'100vh', background:'linear-gradient(160deg,#f8f0ff 0%,#e8f4ff 100%)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'2rem', gap:'2.5rem' }}>
+      <div style={{ textAlign:'center' }}>
+        <div style={{ fontSize:'3.5rem', lineHeight:1 }}>⭐</div>
+        <h1 style={{ fontSize:'3rem', fontWeight:900, color:'#5F27CD', margin:'0.5rem 0 0.25rem' }}>Hi Alex!</h1>
+        <p style={{ fontSize:'1.25rem', color:'#636e72', margin:0, fontWeight:700 }}>How do you want to learn today?</p>
+      </div>
+      <div style={{ display:'flex', gap:'1.5rem', flexWrap:'wrap', justifyContent:'center' }}>
+        <Btn3D bg="#6C5CE7" shadow="#4834D4" onClick={() => { setMode('practice'); setScreen('select'); }}
+          style={{ padding:'2rem 2.5rem', fontSize:'1.2rem', width:'200px', display:'flex', flexDirection:'column', alignItems:'center', gap:'0.5rem' }}>
+          <span style={{ fontSize:'2.8rem' }}>📚</span>
+          Practice Mode
+          <span style={{ fontSize:'0.82rem', opacity:0.85, fontWeight:700 }}>Learn step by step</span>
+        </Btn3D>
+        <Btn3D bg="#FF6B6B" shadow="#C0392B" onClick={() => { setMode('game'); setScreen('select'); }}
+          style={{ padding:'2rem 2.5rem', fontSize:'1.2rem', width:'200px', display:'flex', flexDirection:'column', alignItems:'center', gap:'0.5rem' }}>
+          <span style={{ fontSize:'2.8rem' }}>⚡</span>
+          Game Mode
+          <span style={{ fontSize:'0.82rem', opacity:0.85, fontWeight:700 }}>Race the clock!</span>
+        </Btn3D>
+      </div>
+    </div>
+  );
+
+  /* ── SELECT ── */
+  if (screen === 'select') {
+    const isGame = mode === 'game';
+    const canGo  = isGame ? selectedTables.length > 0 : selectedTables.length === 1;
+    return (
+      <div style={{ ...F, minHeight:'100vh', background: isGame ? 'linear-gradient(160deg,#fff5e6 0%,#ffe8f0 100%)' : 'linear-gradient(160deg,#e8f4ff 0%,#f0e8ff 100%)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'2rem', gap:'1.5rem' }}>
+        <button onClick={() => { setScreen('mode'); setSelectedTables([]); }}
+          style={{ ...F, position:'absolute', top:'1.2rem', left:'1.2rem', background:'rgba(255,255,255,0.8)', border:'2px solid #ddd', borderRadius:'999px', padding:'0.4rem 1rem', cursor:'pointer', fontSize:'1rem', color:'#636e72', fontWeight:800 }}>
+          ← Back
+        </button>
+        <div style={{ textAlign:'center' }}>
+          <div style={{ fontSize:'2rem', lineHeight:1, marginBottom:'0.4rem' }}>{isGame ? '🎮' : '📖'}</div>
+          <h2 style={{ fontSize:'2rem', fontWeight:900, color: isGame ? '#FF6B6B' : '#6C5CE7', margin:0 }}>
+            {isGame ? 'Pick your times tables!' : 'Which times table?'}
+          </h2>
+          <p style={{ color:'#636e72', fontWeight:700, margin:'0.4rem 0 0', fontSize:'1rem' }}>
+            {isGame ? 'You can pick more than one!' : 'Tap one to choose'}
+          </p>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 80px)', gap:'14px' }}>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(n => {
+            const sel = selectedTables.includes(n);
+            const c   = TABLE_COLORS[n - 1];
+            const d   = TABLE_DARKS[n - 1];
+            return (
+              <button key={n}
+                onClick={() => isGame ? toggleTable(n) : setSelectedTables([n])}
+                style={{ ...F, width:'80px', height:'80px', borderRadius:'50%', background: sel ? d : c, color:'white', border: sel ? '4px solid white' : '4px solid transparent', cursor:'pointer', fontWeight:900, fontSize:'1.7rem', boxShadow: sel ? `0 0 0 4px ${d}, 0 6px 16px rgba(0,0,0,0.2)` : '0 4px 10px rgba(0,0,0,0.15)', transform: sel ? 'scale(1.12)' : 'scale(1)', transition:'all 0.15s ease', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {n}
+              </button>
+            );
+          })}
+        </div>
+        {isGame && (
+          <div style={{ display:'flex', gap:'0.75rem' }}>
+            <button onClick={() => setSelectedTables(Array.from({ length: 12 }, (_, i) => i + 1))}
+              style={{ ...F, background:'white', border:'2px solid #FF6B6B', color:'#FF6B6B', borderRadius:'999px', padding:'0.5rem 1.25rem', cursor:'pointer', fontWeight:800, fontSize:'0.95rem' }}>
+              Select All ✓
+            </button>
+            <button onClick={() => setSelectedTables([])}
+              style={{ ...F, background:'white', border:'2px solid #b2bec3', color:'#636e72', borderRadius:'999px', padding:'0.5rem 1.25rem', cursor:'pointer', fontWeight:800, fontSize:'0.95rem' }}>
+              Clear
+            </button>
+          </div>
+        )}
+        {canGo && (
+          <Btn3D bg={isGame ? '#FF6B6B' : '#6C5CE7'} shadow={isGame ? '#C0392B' : '#4834D4'}
+            onClick={() => isGame ? startQuiz() : setScreen('options')}
+            style={{ padding:'1rem 3rem', fontSize:'1.3rem', marginTop:'0.5rem' }}>
+            {isGame ? "Let's Go! ⚡" : "Next →"}
+          </Btn3D>
+        )}
+      </div>
+    );
+  }
+
+  /* ── OPTIONS ── */
+  if (screen === 'options') return (
+    <div style={{ ...F, minHeight:'100vh', background:'linear-gradient(160deg,#e8fff4 0%,#e8f8ff 100%)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'2rem', gap:'2rem' }}>
+      <button onClick={() => setScreen('select')}
+        style={{ ...F, position:'absolute', top:'1.2rem', left:'1.2rem', background:'rgba(255,255,255,0.8)', border:'2px solid #ddd', borderRadius:'999px', padding:'0.4rem 1rem', cursor:'pointer', fontSize:'1rem', color:'#636e72', fontWeight:800 }}>
+        ← Back
+      </button>
+      <div style={{ textAlign:'center' }}>
+        <div style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:'64px', height:'64px', borderRadius:'50%', background: TABLE_COLORS[selectedTables[0]-1], fontSize:'1.8rem', fontWeight:900, color:'white', marginBottom:'1rem', boxShadow:`0 6px 0 ${TABLE_DARKS[selectedTables[0]-1]}` }}>
+          {selectedTables[0]}
+        </div>
+        <h2 style={{ fontSize:'1.9rem', fontWeight:900, color:'#00B894', margin:0 }}>How would you like to practise?</h2>
+        <p style={{ color:'#636e72', fontWeight:700, margin:'0.4rem 0 0' }}>The {selectedTables[0]}× times table</p>
+      </div>
+      <div style={{ display:'flex', gap:'1.5rem', flexWrap:'wrap', justifyContent:'center' }}>
+        <Btn3D bg="#00B894" shadow="#00695C" onClick={() => startQuiz('sequence')}
+          style={{ padding:'1.8rem 2rem', fontSize:'1.15rem', width:'190px', display:'flex', flexDirection:'column', alignItems:'center', gap:'0.5rem' }}>
+          <span style={{ fontSize:'2.5rem' }}>1️⃣➡️</span>
+          In Order
+          <span style={{ fontSize:'0.82rem', opacity:0.9, fontWeight:700 }}>1×{selectedTables[0]} → 12×{selectedTables[0]}</span>
+        </Btn3D>
+        <Btn3D bg="#FECA57" shadow="#F39C12" color="#4a3800" onClick={() => startQuiz('random')}
+          style={{ padding:'1.8rem 2rem', fontSize:'1.15rem', width:'190px', display:'flex', flexDirection:'column', alignItems:'center', gap:'0.5rem' }}>
+          <span style={{ fontSize:'2.5rem' }}>🔀</span>
+          Mix It Up!
+          <span style={{ fontSize:'0.82rem', opacity:0.85, fontWeight:700 }}>Random order</span>
+        </Btn3D>
+      </div>
+    </div>
+  );
+
+  /* ── QUIZ ── */
+  if (screen === 'quiz' && cq) {
+    const correctAns  = cq.a * cq.b;
+    const triesLeft   = 3 - tries;
+    const timerColor  = timeLeft <= 10 ? '#FF6B6B' : timeLeft <= 20 ? '#FF9F43' : '#6C5CE7';
+    const timerPct    = (timeLeft / 60) * 100;
+    const bgColor     = feedback === 'correct' ? '#e8fff4' : (feedback === 'wrong' || feedback === 'revealed') ? '#fff0f0' : '#fafafa';
+    const cardBorder  = feedback === 'correct' ? '3px solid #00B894' : feedback === 'wrong' ? '3px solid #FF6B6B' : feedback === 'revealed' ? '3px solid #6C5CE7' : '3px solid #E0E0E0';
+
+    return (
+      <div style={{ ...F, minHeight:'100vh', background:bgColor, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'1.5rem', gap:'1.25rem', transition:'background 0.3s' }}>
+
+        {/* Top bar */}
+        {/* Quit confirmation modal */}
+        {confirmQuit && (
+          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:999, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.5rem' }}>
+            <div style={{ ...F, background:'white', borderRadius:'28px', padding:'2rem 2.5rem', textAlign:'center', boxShadow:'0 8px 40px rgba(0,0,0,0.2)', maxWidth:'340px', width:'100%', display:'flex', flexDirection:'column', gap:'1.25rem' }}>
+              <div style={{ fontSize:'2.5rem' }}>🏠</div>
+              <div>
+                <div style={{ fontSize:'1.4rem', fontWeight:900, color:'#2D3436', marginBottom:'0.4rem' }}>Go back to home?</div>
+                <div style={{ fontSize:'1rem', color:'#636e72', fontWeight:700 }}>Your progress will be lost.</div>
+              </div>
+              <div style={{ display:'flex', gap:'0.75rem', justifyContent:'center' }}>
+                <Btn3D bg="#FF6B6B" shadow="#C0392B" onClick={() => { setConfirmQuit(false); reset(); }}
+                  style={{ padding:'0.75rem 1.5rem', fontSize:'1rem' }}>
+                  Yes, go home
+                </Btn3D>
+                <Btn3D bg="white" shadow="#ddd" color="#636e72" onClick={() => setConfirmQuit(false)}
+                  style={{ padding:'0.75rem 1.5rem', fontSize:'1rem', border:'2px solid #E0E0E0' }}>
+                  Keep going!
+                </Btn3D>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div style={{ width:'100%', maxWidth:'520px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <button onClick={() => setConfirmQuit(true)} style={{ ...F, background:'rgba(0,0,0,0.06)', border:'none', borderRadius:'999px', padding:'0.4rem 1rem', cursor:'pointer', fontSize:'0.95rem', color:'#636e72', fontWeight:800 }}>✕ Quit</button>
+          {mode === 'game' ? (
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:'2.8rem', fontWeight:900, color:timerColor, lineHeight:1, transition:'color 0.3s' }} className={timeLeft <= 10 ? 'pulse' : ''}>{timeLeft}</div>
+              <div style={{ fontSize:'0.8rem', color:'#b2bec3', fontWeight:700 }}>seconds left</div>
+            </div>
+          ) : (
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:'1rem', fontWeight:800, color:'#636e72' }}>{qIdx + 1} <span style={{ color:'#b2bec3' }}>/ {questions.length}</span></div>
+            </div>
+          )}
+          <div style={{ textAlign:'right' }}>
+            <div style={{ fontSize:'1.6rem', fontWeight:900, color:'#6C5CE7', lineHeight:1 }}>{score.correct}</div>
+            <div style={{ fontSize:'0.8rem', color:'#b2bec3', fontWeight:700 }}>correct</div>
+          </div>
+        </div>
+
+        {/* Progress/timer bar */}
+        <div style={{ width:'100%', maxWidth:'520px', height:'10px', background:'#E0E0E0', borderRadius:'999px', overflow:'hidden' }}>
+          <div style={{ height:'100%', borderRadius:'999px', transition:'width 0.9s linear, background 0.5s', width: mode === 'game' ? `${timerPct}%` : `${(qIdx / questions.length) * 100}%`, background: mode === 'game' ? timerColor : '#6C5CE7' }} />
+        </div>
+
+        {/* Table badge */}
+        {mode === 'practice' && (
+          <div style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem', background: TABLE_COLORS[selectedTables[0]-1], color:'white', borderRadius:'999px', padding:'0.3rem 1rem', fontWeight:900, fontSize:'0.9rem' }}>
+            ×{selectedTables[0]} table
+          </div>
+        )}
+
+        {/* Question card */}
+        <div style={{ background:'white', borderRadius:'28px', padding:'2.5rem 3rem', textAlign:'center', boxShadow:'0 4px 30px rgba(0,0,0,0.08)', border:cardBorder, width:'100%', maxWidth:'420px', transition:'border 0.25s' }}>
+          <div style={{ fontSize:'3.8rem', fontWeight:900, color:'#2D3436', letterSpacing:'-2px', lineHeight:1.1 }}>
+            {cq.a} <span style={{ color:'#b2bec3' }}>×</span> {cq.b} <span style={{ color:'#b2bec3' }}>=</span> <span style={{ color:'#6C5CE7' }}>?</span>
+          </div>
+          {showAnswer && (
+            <div style={{ marginTop:'1.2rem', fontSize:'2rem', fontWeight:900, color:'#6C5CE7' }} className="pop-in">
+              The answer is <span style={{ color:'#00B894' }}>{correctAns}</span>! 💡
+            </div>
+          )}
+        </div>
+
+        {/* Feedback emoji */}
+        {feedback && (
+          <div style={{ fontSize:'3.5rem', lineHeight:1 }} className="pop-in">
+            {feedback === 'correct' ? '✅' : feedback === 'wrong' ? '❌' : '🤔'}
+          </div>
+        )}
+
+        {feedback === 'correct' && <div style={{ fontSize:'1.3rem', fontWeight:900, color:'#00B894' }}>Brilliant! 🌟</div>}
+        {feedback === 'wrong' && !showAnswer && (
+          <div style={{ fontSize:'1.15rem', fontWeight:900, color:'#FF6B6B' }}>
+            {triesLeft === 0 ? "Don't worry, let's see..." : "Try again! You've got this!"}
+          </div>
+        )}
+
+        {/* Hearts (practice) */}
+        {mode === 'practice' && !showAnswer && !feedback && tries > 0 && (
+          <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+            {[0,1,2].map(i => (
+              <span key={i} style={{ fontSize:'1.5rem', filter: i < triesLeft ? 'none' : 'grayscale(1) opacity(0.3)' }}>❤️</span>
+            ))}
+            <span style={{ fontSize:'0.95rem', color:'#636e72', fontWeight:800, marginLeft:'4px' }}>
+              {triesLeft} {triesLeft === 1 ? 'try' : 'tries'} left
+            </span>
+          </div>
+        )}
+
+        {/* Input */}
+        {!showAnswer && (
+          <div style={{ display:'flex', gap:'0.75rem', alignItems:'center' }}>
+            <input
+              ref={inputRef}
+              type="number"
+              value={answer}
+              onChange={e => setAnswer(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              placeholder="?"
+              min="0" max="999"
+              disabled={!!feedback}
+              style={{ ...F, fontSize:'2.5rem', fontWeight:900, width:'110px', textAlign:'center', padding:'0.6rem', border:'3px solid #E0E0E0', borderRadius:'16px', outline:'none', color:'#2D3436', background: feedback ? '#F5F5F5' : 'white' }}
+            />
+            <Btn3D bg="#6C5CE7" shadow="#4834D4" disabled={!answer.trim() || !!feedback} onClick={handleSubmit}
+              style={{ padding:'0.85rem 1.6rem', fontSize:'1.15rem' }}>
+              Check ✓
+            </Btn3D>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ── RESULTS ── */
+  if (screen === 'results') {
+    const total  = mode === 'practice' ? questions.length : score.total;
+    const pct    = total > 0 ? Math.round((score.correct / total) * 100) : 0;
+    const stars  = pct >= 90 ? 3 : pct >= 60 ? 2 : 1;
+    const { msg, color } = pct >= 90
+      ? { msg: "Amazing! You're a superstar!", color:'#F39C12' }
+      : pct >= 60
+      ? { msg: "Great work! Keep it up!",       color:'#00B894' }
+      : { msg: "Good try! Practice makes perfect!", color:'#6C5CE7' };
+
+    return (
+      <div style={{ ...F, minHeight:'100vh', background:'linear-gradient(160deg,#fff8e7 0%,#f0e8ff 100%)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'2rem', gap:'1.75rem', textAlign:'center' }}>
+        <div style={{ fontSize:'3rem', lineHeight:1 }} className="pop-in">{'⭐'.repeat(stars)}</div>
+        <h2 style={{ fontSize:'2.2rem', fontWeight:900, color, margin:0 }}>{msg}</h2>
+        <div style={{ background:'white', borderRadius:'28px', padding:'2rem 3.5rem', boxShadow:'0 6px 30px rgba(0,0,0,0.1)', display:'flex', flexDirection:'column', gap:'0.5rem' }}>
+          <div style={{ fontSize:'5rem', fontWeight:900, color:'#6C5CE7', lineHeight:1 }}>
+            {score.correct}<span style={{ fontSize:'2.5rem', color:'#b2bec3' }}>/{total}</span>
+          </div>
+          <div style={{ fontSize:'1.1rem', color:'#636e72', fontWeight:700 }}>correct answers</div>
+          {mode === 'game' && total > 0 && (
+            <div style={{ marginTop:'0.5rem', fontSize:'1.4rem', fontWeight:900, color:'#FF9F43' }}>{pct}% accuracy 🎯</div>
+          )}
+        </div>
+        <div style={{ display:'flex', gap:'1rem', flexWrap:'wrap', justifyContent:'center' }}>
+          <Btn3D bg="#6C5CE7" shadow="#4834D4" onClick={() => startQuiz(practiceOrder)}
+            style={{ padding:'0.9rem 2rem', fontSize:'1.1rem' }}>
+            Play Again 🔄
+          </Btn3D>
+          <Btn3D bg="white" shadow="#ddd" color="#636e72" onClick={reset}
+            style={{ padding:'0.9rem 2rem', fontSize:'1.1rem', border:'2px solid #E0E0E0' }}>
+            Home 🏠
+          </Btn3D>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
