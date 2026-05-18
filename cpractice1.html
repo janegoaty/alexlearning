@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Year 5–7 Maths Workbook</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:#F5F3EF;color:#1a1a1a;min-height:100vh;padding-bottom:3rem}
+.wrap{max-width:680px;margin:0 auto;padding:1.5rem 1rem}
+
+/* Home */
+.meta{font-size:13px;color:#888;margin-bottom:2px}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.sub{font-size:14px;color:#666;margin-bottom:1.5rem}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.stat-card{background:#E8E6E1;border-radius:10px;padding:.75rem 1rem}
+.stat-label{font-size:12px;color:#666;margin-bottom:2px}
+.stat-val{font-size:24px;font-weight:700}
+.phase-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem}
+.phase-card{background:#fff;border:1px solid #ddd;border-radius:14px;padding:.875rem 1.25rem;cursor:pointer;display:flex;align-items:center;gap:14px;transition:box-shadow .15s}
+.phase-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.phase-card.locked{opacity:.45;cursor:default;pointer-events:none}
+.phase-badge{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
+.phase-meta{flex:1;min-width:0}
+.phase-title-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.phase-name{font-weight:700;font-size:14px}
+.phase-sub{font-size:13px;color:#666}
+.phase-topics{font-size:12px;color:#888;margin-top:2px}
+.phase-prog{margin-top:6px;height:3px;border-radius:2px;overflow:hidden}
+.phase-prog-bar{height:100%;border-radius:2px}
+.score-pill{border-radius:8px;padding:4px 12px;font-size:13px;font-weight:700;flex-shrink:0}
+.phase-arrow{color:#bbb;font-size:22px;flex-shrink:0;line-height:1}
+.info-box{background:#E8E6E1;border-radius:10px;padding:1rem;font-size:13px;color:#555;line-height:1.7}
+.info-box strong{color:#1a1a1a}
+.reset-btn{margin-top:1rem;background:none;border:1px solid #ccc;border-radius:8px;padding:6px 14px;font-size:12px;color:#888;cursor:pointer;display:block;margin-left:auto}
+
+/* Phase view */
+.back-btn{display:flex;align-items:center;gap:4px;font-size:13px;color:#666;background:none;border:none;cursor:pointer;padding:6px 0;margin-bottom:1rem}
+.phase-header{border-radius:14px;padding:1rem 1.25rem;margin-bottom:1.25rem;border:1px solid rgba(0,0,0,.08)}
+.ph-tag{font-size:13px;font-weight:700;margin-bottom:2px}
+.ph-title{font-size:20px;font-weight:700;margin-bottom:4px}
+.ph-topics{font-size:13px;color:#555}
+.prog-row{display:flex;justify-content:space-between;font-size:12px;margin-top:12px;margin-bottom:4px}
+.prog-bar-bg{height:4px;border-radius:4px;overflow:hidden}
+.prog-bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.score-display{margin-top:10px;display:flex;align-items:center;gap:12px}
+.score-num{font-size:32px;font-weight:700}
+.score-msg{font-size:13px;color:#555}
+.reminder{background:#FEF3E2;border:1px solid #FAC775;border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:13px;color:#5a3200;display:flex;gap:8px}
+.questions{display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem}
+
+/* Question */
+.q-item{background:#fff;border:1px solid #ddd;border-radius:12px;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px}
+.q-item.q-ok{border-color:#1D9E75}
+.q-item.q-bad{border-color:#cc3333}
+.q-top{display:flex;gap:10px;align-items:flex-start}
+.q-num{min-width:28px;height:28px;border-radius:50%;background:#EEE;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#666;flex-shrink:0}
+.q-num.ok{background:#E1F5EE;color:#1D9E75}
+.q-num.bad{background:#FEE;color:#cc3333}
+.q-text{font-size:15px;line-height:1.55;color:#1a1a1a}
+.q-hint{font-size:12px;color:#888;font-style:italic;margin-top:4px}
+.q-label{font-size:12px;color:#666;display:block;margin-bottom:4px}
+.req{color:#BA7517}
+textarea.working{width:100%;min-height:72px;resize:vertical;font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#1a1a1a;font-family:inherit}
+textarea.working:focus{outline:none;box-shadow:0 0 0 2px rgba(0,0,0,.15)}
+textarea.working:disabled{background:#f5f5f5}
+textarea.working.missing-wrk{border-color:#BA7517}
+.miss-msg{font-size:12px;color:#BA7517;margin-top:2px}
+.ans-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+input.ans{width:110px;height:36px;font-size:15px;border:1px solid #ccc;border-radius:8px;padding:0 10px;background:#fff;color:#1a1a1a;font-family:inherit;-moz-appearance:textfield}
+input.ans:focus{outline:none;box-shadow:0 0 0 2px rgba(0,0,0,.15)}
+input.ans:disabled{background:#f5f5f5}
+input.ans.ok{border-color:#1D9E75}
+input.ans.bad{border-color:#cc3333}
+.ok-msg{font-size:13px;color:#1D9E75;font-weight:700}
+.bad-msg{font-size:13px;color:#cc3333}
+.solution{background:#FFFBF0;border:1px solid #FAC775;border-radius:8px;padding:8px 12px;font-size:13px;color:#412402;line-height:1.55}
+
+/* Buttons */
+.submit-btn{width:100%;height:46px;font-size:16px;font-weight:700;color:#fff;border:none;border-radius:10px;cursor:pointer;margin-bottom:1.5rem}
+.warn-box{background:#FEF3E2;border:1px solid #FAC775;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#5a3200}
+.nav-row{display:flex;gap:10px;margin-bottom:2rem;flex-wrap:wrap}
+.next-btn{flex:1;min-width:140px;height:46px;font-size:15px;font-weight:700;color:#fff;border:none;border-radius:10px;cursor:pointer}
+.overview-btn{flex:1;min-width:140px;height:46px;font-size:15px;background:transparent;color:#1a1a1a;border:1px solid #ccc;border-radius:10px;cursor:pointer}
+.complete-box{flex:1;background:#E1F5EE;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#0F6E56;font-weight:700;padding:12px}
+.retry-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.retry-btn{flex:1;min-width:140px;height:40px;font-size:13px;font-weight:600;color:#555;background:#fff;border:1px solid #ccc;border-radius:10px;cursor:pointer}
+.retry-btn:hover{background:#f5f5f5}
+.retry-btn.primary-retry{color:#fff;border:none}
+.q-item.q-faded{opacity:0.35;pointer-events:none}
+.retry-badge{display:inline-block;background:#FEF3E2;border:1px solid #FAC775;color:#5a3200;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;margin-left:8px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const PHASES=[
+  {id:1,title:"Phase 1",subtitle:"Year 5 Foundations",topics:"Place value · Fractions · Sequences · Basic operations",color:"#1D9E75",light:"#E1F5EE",
+  questions:[
+    {id:"1.1",type:"n",text:"What is the value of the digit 6 in the number 36,412?",ans:6000},
+    {id:"1.2",type:"n",text:"Round 8,764 to the nearest hundred.",ans:8800},
+    {id:"1.3",type:"n",text:"Calculate: 9 &times; 7",ans:63},
+    {id:"1.4",type:"n",text:"Calculate: 144 &divide; 12",ans:12},
+    {id:"1.5",type:"n",text:"What is the next term in this sequence: 4, 8, 12, 16, ...?",ans:20},
+    {id:"1.6",type:"n",text:"What is &frac14; of 48?",ans:12},
+    {id:"1.7",type:"n",text:"What is 3&frasl;5 of 30?",ans:18},
+    {id:"1.8",type:"n",text:"Find the missing number: 3 &times; ___ = 48",ans:16},
+    {id:"1.9",type:"n",text:"Calculate: 5.4 + 3.7",ans:9.1},
+    {id:"1.10",type:"n",text:"Calculate: 200 &minus; 63",ans:137},
+    {id:"1.11",type:"n",text:"A rectangle has length 12 cm and width 5 cm. What is its perimeter in cm?",ans:34},
+    {id:"1.12",type:"w",text:"Mia has 3 bags of apples. Each bag contains 14 apples. She eats 5 apples. How many apples does she have left?",ans:37,sol:"3 bags &times; 14 = 42 apples total. 42 &minus; 5 = 37 apples."},
+    {id:"1.13",type:"n",text:"A sequence starts at 5 and increases by 6 each time. What is the 6th term?",ans:35},
+    {id:"1.14",type:"n",text:"Find the missing number: 56 &divide; ___ = 7",ans:8},
+    {id:"1.15",type:"n",text:"What is 25% of 80?",ans:20},
+    {id:"1.16",type:"n",text:"Calculate 6&sup2; (6 squared).",ans:36},
+    {id:"1.17",type:"n",text:"What is 0.5 &times; 14?",ans:7},
+    {id:"1.18",type:"n",text:"What is &frac34; of 60?",ans:45},
+    {id:"1.19",type:"w",text:"There are 240 seats in a cinema. 3&frasl;8 of the seats are occupied. How many seats are empty?",ans:150,sol:"3&frasl;8 &times; 240 = 90 seats occupied. 240 &minus; 90 = 150 seats empty."},
+    {id:"1.20",type:"n",text:"Calculate: 4,800 &divide; 6",ans:800},
+  ]},
+  {id:2,title:"Phase 2",subtitle:"Year 5 Extended",topics:"Decimals · Area · Order of operations · Sequences · Word problems",color:"#185FA5",light:"#E6F1FB",
+  questions:[
+    {id:"2.1",type:"n",text:"Calculate: 4.7 &times; 3",ans:14.1},
+    {id:"2.2",type:"n",text:"Calculate: 12.5 &minus; 4.8",ans:7.7},
+    {id:"2.3",type:"n",text:"A rectangle has area 84 cm&sup2;. Its length is 12 cm. What is its width in cm?",ans:7},
+    {id:"2.4",type:"n",text:"What is the next term in this sequence: 1, 4, 9, 16, 25, ...?",ans:36},
+    {id:"2.5",type:"n",text:"If &Delta; + &Delta; = 18, what is the value of &Delta;?",ans:9},
+    {id:"2.6",type:"n",text:"Calculate: 17 &times; 6",ans:102},
+    {id:"2.7",type:"n",text:"Calculate: 350 + 28 &times; 2 &nbsp;&nbsp;(use correct order of operations)",ans:406},
+    {id:"2.8",type:"n",text:"A bag of rice weighs 2.5 kg. How much do 4 bags weigh in kg?",ans:10},
+    {id:"2.9",type:"n",text:"Sequence: 80, 73, 66, 59, ... What is the next term?",ans:52},
+    {id:"2.10",type:"w",text:"A shop sells pens for $1.25 each and notebooks for $3.50 each. Sam buys 4 pens and 2 notebooks. How much does he pay in total?",ans:12,sol:"4 pens: 4 &times; $1.25 = $5.00. 2 notebooks: 2 &times; $3.50 = $7.00. Total = $12.00."},
+    {id:"2.11",type:"n",text:"Find the missing number: ___ &times; 8 = 120",ans:15},
+    {id:"2.12",type:"n",text:"A triangle has base 10 cm and height 6 cm. What is its area in cm&sup2;? (Area = &frac12; &times; base &times; height)",ans:30},
+    {id:"2.13",type:"n",text:"What is 60% of 90?",ans:54},
+    {id:"2.14",type:"n",text:"What is the 10th term of the sequence: 7, 14, 21, 28, ...?",ans:70},
+    {id:"2.15",type:"w",text:"A train leaves at 09:45 and arrives at 12:20. How many minutes does the journey take?",ans:155,sol:"09:45&rarr;10:00 = 15 min. 10:00&rarr;12:00 = 120 min. 12:00&rarr;12:20 = 20 min. Total: 155 minutes."},
+    {id:"2.16",type:"n",text:"If &square; &times; 4 = 52, what is &square;?",ans:13},
+    {id:"2.17",type:"n",text:"What is 2&frasl;3 of 90?",ans:60},
+    {id:"2.18",type:"n",text:"Calculate: 1.8 + 0.65 + 4.5",ans:6.95},
+    {id:"2.19",type:"n",text:"A sequence rule: multiply by 2 then subtract 1. The first term is 3. What is the 4th term? (Apply the rule three more times.)",ans:17},
+    {id:"2.20",type:"n",text:"Round 7.846 to 1 decimal place.",ans:7.8},
+  ]},
+  {id:3,title:"Phase 3",subtitle:"Year 5/6 Bridge",topics:"Ratio · Percentages · Symbol equations · Linear sequences",color:"#534AB7",light:"#EEEDFE",
+  questions:[
+    {id:"3.1",type:"n",text:"The ratio of boys to girls in a class is 3:2. There are 30 students in total. How many are girls?",ans:12},
+    {id:"3.2",type:"n",text:"Solve: &Delta; + 15 = 34. What is &Delta;?",ans:19},
+    {id:"3.3",type:"n",text:"Sequence: 2, 6, 18, 54, ... What is the 5th term?",ans:162},
+    {id:"3.4",type:"w",text:"A map uses a scale of 1:500. A room on the map measures 6 cm. How long is the actual room in cm?",ans:3000,sol:"Scale 1:500 means 1 cm on the map = 500 cm in real life. 6 &times; 500 = 3,000 cm."},
+    {id:"3.5",type:"n",text:"What is 35% of 120?",ans:42},
+    {id:"3.6",type:"n",text:"Solve: 3 &times; &square; + 4 = 25. What is &square;?",ans:7},
+    {id:"3.7",type:"n",text:"A sequence starts at 100 and decreases by 7 each time. What is the 8th term?",ans:51},
+    {id:"3.8",type:"w",text:"Apples cost $0.85 each. Oranges cost $1.20 each. Priya buys 5 apples and 3 oranges and pays with a $10 note. How much change does she receive?",ans:2.15,sol:"5 &times; $0.85 = $4.25. 3 &times; $1.20 = $3.60. Total = $7.85. Change = $10.00 &minus; $7.85 = $2.15."},
+    {id:"3.9",type:"n",text:"What is 15% of 200?",ans:30},
+    {id:"3.10",type:"n",text:"If the perimeter of a square is 52 cm, what is the length of one side in cm?",ans:13},
+    {id:"3.11",type:"n",text:"Solve: 48 &divide; n = 6. What is n?",ans:8},
+    {id:"3.12",type:"n",text:"Increase 80 by 25%. What is the new value?",ans:100},
+    {id:"3.13",type:"w",text:"In a bag there are red and blue marbles in the ratio 5:3. There are 24 blue marbles. How many red marbles are there?",ans:40,sol:"3 parts = 24 blue marbles &rarr; 1 part = 8. Red = 5 parts = 5 &times; 8 = 40."},
+    {id:"3.14",type:"n",text:"What is the lowest common multiple (LCM) of 4 and 6?",ans:12},
+    {id:"3.15",type:"n",text:"Find the value: &Delta; &times; &Delta; = 49. What is &Delta;?",ans:7},
+    {id:"3.16",type:"n",text:"Sequence: 3, 7, 11, 15, ... What is the 20th term?",ans:79},
+    {id:"3.17",type:"n",text:"Calculate: (6 + 4) &times; (9 &minus; 5)",ans:40},
+    {id:"3.18",type:"w",text:"A rectangular field is 45 m long and 30 m wide. Fencing costs $12 per metre. How much does it cost to fence the entire field?",ans:1800,sol:"Perimeter = 2 &times; (45 + 30) = 150 m. Cost = 150 &times; $12 = $1,800."},
+    {id:"3.19",type:"n",text:"Calculate: 8&sup2; &minus; 5&sup2;",ans:39},
+    {id:"3.20",type:"n",text:"Solve: 2 &times; (x + 3) = 14. What is x?",ans:4},
+  ]},
+  {id:4,title:"Phase 4",subtitle:"Year 6 Core",topics:"Letter algebra · nth term rules · Angles · Mean · Solving equations",color:"#BA7517",light:"#FAEEDA",
+  questions:[
+    {id:"4.1",type:"n",text:"Solve: 3x + 5 = 20. What is x?",ans:5},
+    {id:"4.2",type:"w",text:"A train travels at 80 km/h. How far does it travel in 2.5 hours? (Distance = speed &times; time)",ans:200,sol:"Distance = 80 &times; 2.5 = 200 km."},
+    {id:"4.3",type:"n",text:"The <em>n</em>th term of a sequence is 4<em>n</em> + 1. What is the 6th term?",ans:25},
+    {id:"4.4",type:"n",text:"A rectangle has area 105 cm&sup2;. Its length is 15 cm. What is its width in cm?",ans:7},
+    {id:"4.5",type:"n",text:"Simplify 3<em>a</em> + 5<em>a</em>. What is the coefficient of <em>a</em> in the simplified expression?",ans:8},
+    {id:"4.6",type:"n",text:"Solve: <em>n</em> &divide; 4 = 9. What is <em>n</em>?",ans:36},
+    {id:"4.7",type:"w",text:"A shop reduces a $60 shirt by 20%. What is the sale price?",ans:48,sol:"20% of $60 = $12. Sale price = $60 &minus; $12 = $48."},
+    {id:"4.8",type:"n",text:"What is the sum of angles inside any triangle (in degrees)?",ans:180},
+    {id:"4.9",type:"n",text:"A triangle has angles of 75&deg; and 60&deg;. What is the third angle in degrees?",ans:45},
+    {id:"4.10",type:"n",text:"The <em>n</em>th term rule is 5<em>n</em> &minus; 3. For which value of <em>n</em> does the sequence equal 42?",ans:9},
+    {id:"4.11",type:"n",text:"If <em>y</em> = 4, what is the value of 3<em>y</em> + 5?",ans:17},
+    {id:"4.12",type:"n",text:"Solve: 5 &minus; x = &minus;3. What is x?",ans:8},
+    {id:"4.13",type:"w",text:"A car uses 8 litres of fuel per 100 km. How many litres does it use for a 350 km journey?",ans:28,sol:"Rate: 8 &divide; 100 = 0.08 litres/km. 0.08 &times; 350 = 28 litres."},
+    {id:"4.14",type:"n",text:"What is the mean of: 12, 15, 9, 18, 6?",ans:12},
+    {id:"4.15",type:"n",text:"A point is at coordinates (3, &minus;2). It moves 4 units right and 5 units up. What is the new y-coordinate?",ans:3},
+    {id:"4.16",type:"w",text:"A swimming pool holds 45,000 litres. Water drains at 250 litres per minute. How many minutes to drain completely?",ans:180,sol:"Time = 45,000 &divide; 250 = 180 minutes."},
+    {id:"4.17",type:"n",text:"The <em>n</em>th term of a sequence is 3<em>n</em> + 2. What is the first term (<em>n</em> = 1)?",ans:5},
+    {id:"4.18",type:"n",text:"Solve: 4(x &minus; 2) = 20. What is x?",ans:7},
+    {id:"4.19",type:"n",text:"A pie chart has a sector covering 90&deg;. What percentage of the whole does this represent?",ans:25},
+    {id:"4.20",type:"w",text:"Ahmed has $120. He spends &frac13; on food and &frac14; on transport. How much money does he have left?",ans:50,sol:"Food: &frac13; &times; $120 = $40. Transport: &frac14; &times; $120 = $30. Spent: $70. Left: $50."},
+  ]},
+  {id:5,title:"Phase 5",subtitle:"Year 6/7 Bridge",topics:"Equations with x on both sides · Negative numbers · Non-linear sequences · Forming equations",color:"#993C1D",light:"#FAECE7",
+  questions:[
+    {id:"5.1",type:"n",text:"Solve: 2x + 3 = x + 11. What is x?",ans:8},
+    {id:"5.2",type:"w",text:"The length of a rectangle is 3 times its width. The perimeter is 48 cm. What is the width in cm?",ans:6,sol:"Let width = w, length = 3w. Perimeter: 2(w + 3w) = 48 &rarr; 8w = 48 &rarr; w = 6 cm."},
+    {id:"5.3",type:"n",text:"The <em>n</em>th term of a sequence is <em>n</em>&sup2; + 2. What is the 5th term?",ans:27},
+    {id:"5.4",type:"n",text:"Calculate: &minus;8 + (&minus;3)",ans:-11},
+    {id:"5.5",type:"n",text:"Calculate: &minus;6 &times; 4",ans:-24},
+    {id:"5.6",type:"w",text:"A baker makes 200 loaves. He sells 60% on Monday. On Tuesday he sells &frac14; of the remaining loaves. How many loaves are left after Tuesday?",ans:60,sol:"Sold Monday: 60% &times; 200 = 120. Remaining: 80. Sold Tuesday: &frac14; &times; 80 = 20. Left: 60 loaves."},
+    {id:"5.7",type:"n",text:"Solve: 3x &minus; 7 = 2x + 4. What is x?",ans:11},
+    {id:"5.8",type:"n",text:"Calculate: 2&sup3; + 3&sup2;",ans:17},
+    {id:"5.9",type:"w",text:"Two numbers have a sum of 50 and a difference of 14. What is the larger number?",ans:32,sol:"<em>x</em> + <em>y</em> = 50 and <em>x</em> &minus; <em>y</em> = 14. Add both equations: 2<em>x</em> = 64, so <em>x</em> = 32."},
+    {id:"5.10",type:"n",text:"Sequence: 2, 5, 10, 17, 26, ... What is the next term? (Hint: look at the differences between consecutive terms.)",ans:37},
+    {id:"5.11",type:"n",text:"Calculate: 15 &minus; (&minus;7)",ans:22},
+    {id:"5.12",type:"w",text:"A tank is &frac34; full. 120 litres are added and the tank is now completely full. What is the total capacity in litres?",ans:480,sol:"120 litres filled the remaining &frac14;. So &frac14; of capacity = 120 &rarr; capacity = 120 &times; 4 = 480 litres."},
+    {id:"5.13",type:"n",text:"Solve: x &divide; 3 + 4 = 9. What is x?",ans:15},
+    {id:"5.14",type:"n",text:"How many degrees do the interior angles of a quadrilateral add up to?",ans:360},
+    {id:"5.15",type:"w",text:"Red and blue beads are in the ratio 3:7. There are 56 blue beads. How many beads are there in total?",ans:80,sol:"7 parts = 56 blue &rarr; 1 part = 8. Total = 10 parts = 80 beads."},
+    {id:"5.16",type:"n",text:"Calculate: (&minus;5)&sup2; + 3",ans:28},
+    {id:"5.17",type:"n",text:"What is the highest common factor (HCF) of 36 and 48?",ans:12},
+    {id:"5.18",type:"w",text:"A car averages 60 km/h for 2 hours, then 90 km/h for 1.5 hours. What is the total distance travelled in km?",ans:255,sol:"First leg: 60 &times; 2 = 120 km. Second leg: 90 &times; 1.5 = 135 km. Total: 255 km."},
+    {id:"5.19",type:"n",text:"Simplify the ratio 36:24. Write the first number of the simplified ratio.",ans:3},
+    {id:"5.20",type:"n",text:"Solve: 5(2x &minus; 1) = 35. What is x?",ans:4},
+  ]},
+  {id:6,title:"Phase 6",subtitle:"Year 7 Preview",topics:"Substitution · Forming & solving equations · Algebraic reasoning · Harder word problems",color:"#993556",light:"#FBEAF0",
+  questions:[
+    {id:"6.1",type:"n",text:"If <em>a</em> = 3 and <em>b</em> = &minus;2, calculate: 4<em>a</em> &minus; 3<em>b</em>",ans:18},
+    {id:"6.2",type:"w",text:"28 students sat a test and the mean score was 65. Two more students then sat the test, scoring 75 and 85. What is the new mean for all 30 students?",ans:66,sol:"28 &times; 65 = 1,820. Add new scores: 1,820 + 75 + 85 = 1,980. New mean: 1,980 &divide; 30 = 66."},
+    {id:"6.3",type:"n",text:"What is the value of 3x&sup2; when x = 4?",ans:48},
+    {id:"6.4",type:"w",text:"Tom thinks of a number. He multiplies it by 3 and adds 7. He gets 31. Write an equation and solve it to find Tom's number.",ans:8,sol:"Let <em>n</em> = Tom's number. 3<em>n</em> + 7 = 31 &rarr; 3<em>n</em> = 24 &rarr; <em>n</em> = 8."},
+    {id:"6.5",type:"n",text:"Solve: 3(x + 4) = 2(x + 9). What is x?",ans:6},
+    {id:"6.6",type:"n",text:"Expand 4(2x &minus; 3). What is the coefficient of x in the expanded expression?",ans:8},
+    {id:"6.7",type:"n",text:"The <em>n</em>th term of a sequence is <em>n</em>&sup2; &minus; <em>n</em>. What is the 7th term?",ans:42},
+    {id:"6.8",type:"w",text:"A rectangle has a perimeter of 38 cm. Its length is 5 cm more than its width. Find the length in cm.",ans:12,sol:"Let width = w, length = w + 5. 2(w + w + 5) = 38 &rarr; 4w + 10 = 38 &rarr; w = 7. Length = 12 cm."},
+    {id:"6.9",type:"n",text:"If x = &minus;3, what is the value of x&sup2; &minus; 2x + 1?",ans:16},
+    {id:"6.10",type:"w",text:"Two buses leave at the same time in the same direction. Bus A travels at 50 km/h, Bus B at 65 km/h. After how many hours will Bus B be exactly 30 km ahead?",ans:2,sol:"Relative speed: 65 &minus; 50 = 15 km/h. Time = 30 &divide; 15 = 2 hours."},
+    {id:"6.11",type:"n",text:"Solve: (x + 3) &divide; 2 = 7. What is x?",ans:11},
+    {id:"6.12",type:"n",text:"What is the value of 2<em>a</em> + 3<em>b</em> &minus; <em>c</em> when <em>a</em> = 5, <em>b</em> = 4, <em>c</em> = 7?",ans:15},
+    {id:"6.13",type:"w",text:"A water tank is filled at 15 litres/min and drained at 9 litres/min simultaneously. Starting from empty, how many minutes to fill a 120-litre tank?",ans:20,sol:"Net fill rate: 15 &minus; 9 = 6 litres/min. Time = 120 &divide; 6 = 20 minutes."},
+    {id:"6.14",type:"n",text:"Solve: 7 &minus; 3x = x &minus; 9. What is x?",ans:4},
+    {id:"6.15",type:"w",text:"The sum of three consecutive integers is 81. What is the smallest of the three integers?",ans:26,sol:"<em>n</em> + (<em>n</em>+1) + (<em>n</em>+2) = 81 &rarr; 3<em>n</em> + 3 = 81 &rarr; <em>n</em> = 26."},
+    {id:"6.16",type:"n",text:"The area of a triangle is 42 cm&sup2; and its base is 12 cm. What is its height in cm?",ans:7},
+    {id:"6.17",type:"w",text:"A shop increases all prices by 15%, then applies a 10% discount. What is the overall percentage change? (Enter e.g. 3.5 for a 3.5% increase.)",ans:3.5,sol:"1.15 &times; 0.90 = 1.035. This is a 3.5% increase overall."},
+    {id:"6.18",type:"n",text:"Calculate: 5 &times; 10&sup3; + 3 &times; 10&sup2; + 7",ans:5307},
+    {id:"6.19",type:"w",text:"A jacket's price is reduced from $85 to $68. What is the percentage reduction?",ans:20,sol:"Reduction: $17. Percentage: (17 &divide; 85) &times; 100 = 20%."},
+    {id:"6.20",type:"n",text:"Solve: 2x&sup2; = 50. What is the positive value of x?",ans:5},
+  ]},
+];
+
+// ── State ──────────────────────────────────────────────────────────────────
+var state = {view:'home', phase:0, answers:{}, workings:{}, submitted:{}, warn:false, retryQids:{}};
+
+function load(){try{var d=JSON.parse(localStorage.getItem('mwb-y57-v2')||'{}');if(d.a)state.answers=d.a;if(d.w)state.workings=d.w;if(d.s)state.submitted=d.s;if(d.rq)state.retryQids=d.rq;}catch(e){}}
+function save(){try{localStorage.setItem('mwb-y57-v2',JSON.stringify({a:state.answers,w:state.workings,s:state.submitted,rq:state.retryQids}));}catch(e){}}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function chk(q,val){
+  if(!val||!String(val).trim())return null;
+  var n=parseFloat(String(val).replace(/,/g,'').trim());
+  if(isNaN(n))return false;
+  return Math.abs(n-q.ans)<0.02;
+}
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escText(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function render(){
+  document.getElementById('app').innerHTML = state.view==='home' ? homeHTML() : phaseHTML();
+  attachListeners();
+}
+
+function homeHTML(){
+  var done=PHASES.filter(function(_,i){return state.submitted[i];}).length;
+  var tc=0,td=0;
+  PHASES.forEach(function(_,i){var s=getScore(i);if(s){tc+=s.c;td+=s.t;}});
+  var statsH='';
+  if(done>0){
+    statsH='<div class="stats-grid">'
+      +'<div class="stat-card"><div class="stat-label">Phases done</div><div class="stat-val">'+done+'/6</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Questions right</div><div class="stat-val">'+tc+'/'+td+'</div></div>'
+      +'<div class="stat-card"><div class="stat-label">Accuracy</div><div class="stat-val">'+(td?Math.round(tc/td*100)+'%':'—')+'</div></div>'
+      +'</div>';
+  }
+  var cards=PHASES.map(function(ph,i){
+    var unlocked=i===0||!!state.submitted[i-1];
+    var d=!!state.submitted[i];
+    var s=getScore(i);
+    var pct=s?Math.round(s.c/s.t*100):0;
+    var badge=d?'<span style="color:#fff;font-size:18px">&#10003;</span>'
+      :unlocked?'<span style="color:'+ph.color+';font-size:16px;font-weight:700">'+ph.id+'</span>'
+      :'<span style="color:#999;font-size:16px">&#128274;</span>';
+    var badgeBg=d?ph.color:unlocked?ph.light:'#eee';
+    var scoreP=s?'<div class="score-pill" style="background:'+ph.light+';color:'+ph.color+'">'+s.c+'/'+s.t+'</div>':'';
+    var arrow=unlocked&&!d?'<span class="phase-arrow">&#8250;</span>':'';
+    var prog=d&&s?'<div class="phase-prog" style="background:'+ph.color+'33"><div class="phase-prog-bar" style="background:'+ph.color+';width:'+pct+'%"></div></div>':'';
+    return '<div class="phase-card'+(unlocked?'':' locked')+'" data-idx="'+i+'" style="border-color:'+(d?ph.color+'88':'#ddd')+'">'
+      +'<div class="phase-badge" style="background:'+badgeBg+'">'+badge+'</div>'
+      +'<div class="phase-meta">'
+        +'<div class="phase-title-row"><span class="phase-name">'+ph.title+'</span><span class="phase-sub">— '+ph.subtitle+'</span></div>'
+        +'<div class="phase-topics">'+ph.topics+'</div>'
+        +prog
+      +'</div>'
+      +scoreP+arrow
+      +'</div>';
+  }).join('');
+  return '<div class="wrap">'
+    +'<div class="meta">Cambridge / Singapore curriculum</div>'
+    +'<h1>Year 5&ndash;7 Maths Workbook</h1>'
+    +'<div class="sub">120 questions &middot; 6 phases &middot; algebra-focused &middot; word problems throughout &middot; progress saved automatically</div>'
+    +statsH
+    +'<div class="phase-cards">'+cards+'</div>'
+    +'<div class="info-box"><strong>How to use this workbook:</strong> Complete phases in order &mdash; each one unlocks the next. Always write your working for word problems before entering the answer. After submitting a phase, check the solutions for any you got wrong. Your progress is saved in this browser.</div>'
+    +'<button class="reset-btn" id="reset-btn">Reset all progress</button>'
+    +'</div>';
+}
+
+function getScore(i){
+  if(!state.submitted[i])return null;
+  var qs=PHASES[i].questions;
+  var c=qs.filter(function(q){return chk(q,state.answers[q.id])===true;}).length;
+  return{c:c,t:qs.length};
+}
+
+function phaseHTML(){
+  var ph=PHASES[state.phase];
+  var done=!!state.submitted[state.phase];
+  var retryQids=state.retryQids[state.phase]||null;
+  var retrying=!!(retryQids&&retryQids.length);
+  var qs=ph.questions;
+  var total=qs.length;
+  var answered=qs.filter(function(q){return (state.answers[q.id]||'').trim();}).length;
+  var wordQs=qs.filter(function(q){return q.type==='w';});
+  var score=done?getScore(state.phase):null;
+
+  // Header
+  var progOrScore='';
+  if(!done){
+    progOrScore='<div class="prog-row" style="color:'+ph.color+'"><span>'+answered+'/'+total+' answered</span><span>'+wordQs.length+' word problems</span></div>'
+      +'<div class="prog-bar-bg" style="background:'+ph.color+'33"><div class="prog-bar-fill" style="background:'+ph.color+';width:'+(answered/total*100)+'%"></div></div>';
+  } else if(score){
+    var pct=score.c/score.t;
+    var msg=pct===1?'Perfect score! Outstanding work.':pct>=0.8?'Great work! Review the ones you missed.':pct>=0.6?'Good effort — check the solutions below.':'Keep practising — read through the solutions carefully.';
+    var retryBadge=retrying?'<span class="retry-badge">Retry mode — wrong answers cleared</span>':'';
+    progOrScore='<div class="score-display"><div class="score-num" style="color:'+ph.color+'">'+score.c+'/'+score.t+'</div><div class="score-msg">'+msg+retryBadge+'</div></div>';
+  }
+
+  var header='<div class="phase-header" style="background:'+ph.light+'">'
+    +'<div class="ph-tag" style="color:'+ph.color+'">'+ph.title+'</div>'
+    +'<div class="ph-title">'+ph.subtitle+'</div>'
+    +'<div class="ph-topics">'+ph.topics+'</div>'
+    +progOrScore
+    +'</div>';
+
+  // Reminder
+  var reminder='';
+  if(!done&&wordQs.length>0){
+    reminder='<div class="reminder">&#9997;&#65039; <span>For every word problem, fill in the <strong>working</strong> box first. Writing out your steps is what mathematicians do &mdash; and what teachers mark you on.</span></div>';
+  }
+
+  // Questions
+  var qHTML=qs.map(function(q,i){return oneQ(q,i+1,done,retryQids);}).join('');
+
+  // Bottom
+  var bottom='';
+  if(!done){
+    var warnH=state.warn?'<div class="warn-box">Some word problems still have empty working boxes. Go back and write your steps, or click Submit again to submit anyway.</div>':'';
+    bottom=warnH+'<button class="submit-btn" id="submit-btn" style="background:'+ph.color+'">Submit '+ph.title+'</button>';
+  } else if(retrying){
+    var wrongRetry=qs.filter(function(q){return retryQids.indexOf(q.id)>=0;});
+    var wordRetry=wrongRetry.filter(function(q){return q.type==='w';});
+    var warnH2=state.warn?'<div class="warn-box">Some word problems still have empty working boxes. Go back and write your steps, or click Submit again to submit anyway.</div>':'';
+    bottom=warnH2+'<button class="submit-btn" id="submit-retry-btn" style="background:'+ph.color+'">Submit retry answers</button>'
+      +'<div class="nav-row"><button class="overview-btn" id="back-btn2">Back to overview</button></div>';
+  } else {
+    var wrongQs=qs.filter(function(q){return chk(q,state.answers[q.id])===false;});
+    var canNext=state.phase<PHASES.length-1;
+    var nextB=canNext?'<button class="next-btn" id="next-btn" style="background:'+ph.color+'">Next phase &rarr;</button>':'';
+    var completeB=state.phase===PHASES.length-1?'<div class="complete-box">&#127881; You\'ve completed the entire workbook!</div>':'';
+    var retryBtns='';
+    if(wrongQs.length>0){
+      retryBtns='<div class="retry-row">'
+        +'<button class="retry-btn primary-retry" id="retry-wrong-btn" style="background:'+ph.color+'">&#8635; Retry wrong answers ('+wrongQs.length+')</button>'
+        +'<button class="retry-btn" id="clear-retry-btn">&#10005; Clear all &amp; start over</button>'
+        +'</div>';
+    } else {
+      retryBtns='<div class="retry-row"><button class="retry-btn" id="clear-retry-btn">&#10005; Clear all &amp; start over</button></div>';
+    }
+    bottom=retryBtns+'<div class="nav-row">'+nextB+completeB+'<button class="overview-btn" id="back-btn2">Back to overview</button></div>';
+  }
+
+  return '<div class="wrap">'
+    +'<button class="back-btn" id="back-btn">&#8592; Back to phases</button>'
+    +header+reminder
+    +'<div class="questions">'+qHTML+'</div>'
+    +bottom
+    +'</div>';
+}
+
+function oneQ(q,idx,done,retryQids){
+  var retrying=!!(retryQids&&retryQids.length);
+  var isRetryTarget=retrying&&retryQids.indexOf(q.id)>=0;
+  var isLocked=retrying&&!isRetryTarget; // correct q in retry mode → faded
+
+  // Treat retry-target questions as not-yet-done for rendering
+  var effectiveDone=done&&!isRetryTarget;
+
+  var ans=state.answers[q.id]||'';
+  var wrk=state.workings[q.id]||'';
+  var r=effectiveDone?chk(q,ans):null;
+  var isW=q.type==='w';
+  var numCls=effectiveDone?(r===true?'ok':r===false?'bad':''):'';
+  var itemCls=effectiveDone?(r===true?'q-ok':r===false?'q-bad':''):'';
+  if(isLocked)itemCls='q-ok q-faded';
+  var numTxt=effectiveDone?(r===true?'&#10003;':r===false?'&#10007;':idx):idx;
+
+  var wrkH='';
+  if(isW){
+    var missingWrk=effectiveDone&&!wrk.trim();
+    var disabledWrk=effectiveDone||isLocked;
+    wrkH='<div class="q-working">'
+      +'<label class="q-label">Working'+((!wrk&&!effectiveDone&&!isLocked)?'<span class="req"> *</span>':'')+'</label>'
+      +'<textarea class="working'+(missingWrk?' missing-wrk':'')+'" data-qid="'+q.id+'"'+(disabledWrk?' disabled':'')+' placeholder="Write out each step here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">'+escText(wrk)+'</textarea>'
+      +(missingWrk?'<p class="miss-msg">Don\'t forget to show your working!</p>':'')
+      +'</div>';
+  }
+
+  var disabledAns=effectiveDone||isLocked;
+  var ansClass=effectiveDone?(r===true?' ok':r===false?' bad':''):'';
+  var afterAns=effectiveDone&&r===false?'<span class="bad-msg">Correct: <strong>'+q.ans+'</strong></span>':effectiveDone&&r===true?'<span class="ok-msg">Correct!</span>':'';
+  var solH=effectiveDone&&r===false&&q.sol?'<div class="solution"><strong>Solution:</strong> '+q.sol+'</div>':'';
+
+  return '<div class="q-item '+itemCls+'" id="q-'+q.id+'">'
+    +'<div class="q-top"><div class="q-num '+numCls+'">'+numTxt+'</div>'
+    +'<div class="q-content"><p class="q-text">'+q.text+'</p>'+(isW&&!isLocked?'<p class="q-hint">Word problem &mdash; write your working below before entering the answer</p>':'')+'</div></div>'
+    +wrkH
+    +'<div class="ans-row"><label class="q-label" style="white-space:nowrap">Answer:</label><input type="text" inputmode="decimal" class="ans'+ansClass+'" data-qid="'+q.id+'" value="'+escAttr(ans)+'"'+(disabledAns?' disabled':'')+' placeholder="?">'+afterAns+'</div>'
+    +solH
+    +'</div>';
+}
+
+// ── Event listeners ────────────────────────────────────────────────────────
+function attachListeners(){
+  // Home
+  document.querySelectorAll('.phase-card').forEach(function(el){
+    el.addEventListener('click',function(){
+      var i=parseInt(this.dataset.idx);
+      state.phase=i; state.view='phase'; state.warn=false;
+      render();
+      window.scrollTo(0,0);
+    });
+  });
+  var rb=document.getElementById('reset-btn');
+  if(rb) rb.addEventListener('click',function(){
+    if(confirm('Reset all progress? This cannot be undone.')){
+      state.answers={}; state.workings={}; state.submitted={}; state.retryQids={}; state.warn=false;
+      save(); render();
+    }
+  });
+
+  // Phase back buttons
+  ['back-btn','back-btn2'].forEach(function(id){
+    var b=document.getElementById(id);
+    if(b) b.addEventListener('click',function(){state.view='home';render();window.scrollTo(0,0);});
+  });
+
+  // Answer inputs
+  document.querySelectorAll('input.ans').forEach(function(el){
+    el.addEventListener('input',function(){
+      state.answers[this.dataset.qid]=this.value;
+      save();
+      // Update progress bar
+      updateProgress();
+    });
+  });
+
+  // Working textareas
+  document.querySelectorAll('textarea.working').forEach(function(el){
+    el.addEventListener('input',function(){
+      state.workings[this.dataset.qid]=this.value;
+      save();
+    });
+  });
+
+  // Submit
+  var sb=document.getElementById('submit-btn');
+  if(sb) sb.addEventListener('click',function(){
+    var ph=PHASES[state.phase];
+    var wordQs=ph.questions.filter(function(q){return q.type==='w';});
+    var allWrk=wordQs.every(function(q){return (state.workings[q.id]||'').trim();});
+    if(!allWrk&&!state.warn){state.warn=true;render();return;}
+    state.submitted[state.phase]=true;
+    state.warn=false;
+    save();
+    render();
+    window.scrollTo(0,0);
+  });
+
+  // Submit retry
+  var srb=document.getElementById('submit-retry-btn');
+  if(srb) srb.addEventListener('click',function(){
+    var ph=PHASES[state.phase];
+    var retryQids=state.retryQids[state.phase]||[];
+    var wordRetry=ph.questions.filter(function(q){return q.type==='w'&&retryQids.indexOf(q.id)>=0;});
+    var allWrk=wordRetry.every(function(q){return (state.workings[q.id]||'').trim();});
+    if(!allWrk&&!state.warn){state.warn=true;render();return;}
+    // Clear retry mode
+    delete state.retryQids[state.phase];
+    state.warn=false;
+    save();
+    render();
+    window.scrollTo(0,0);
+  });
+
+  // Retry wrong answers
+  var rwb=document.getElementById('retry-wrong-btn');
+  if(rwb) rwb.addEventListener('click',function(){
+    var ph=PHASES[state.phase];
+    var wrongQids=ph.questions
+      .filter(function(q){return chk(q,state.answers[q.id])===false;})
+      .map(function(q){return q.id;});
+    // Clear wrong answers
+    wrongQids.forEach(function(qid){delete state.answers[qid];});
+    state.retryQids[state.phase]=wrongQids;
+    state.warn=false;
+    save();
+    render();
+    window.scrollTo(0,0);
+  });
+
+  // Clear all & start over
+  var crb=document.getElementById('clear-retry-btn');
+  if(crb) crb.addEventListener('click',function(){
+    if(confirm('Clear all answers for this phase and start over?')){
+      var ph=PHASES[state.phase];
+      ph.questions.forEach(function(q){delete state.answers[q.id];delete state.workings[q.id];});
+      delete state.submitted[state.phase];
+      delete state.retryQids[state.phase];
+      state.warn=false;
+      save();
+      render();
+      window.scrollTo(0,0);
+    }
+  });
+
+  // Next
+  var nb=document.getElementById('next-btn');
+  if(nb) nb.addEventListener('click',function(){
+    state.phase=Math.min(state.phase+1,PHASES.length-1);
+    state.warn=false;
+    render();
+    window.scrollTo(0,0);
+  });
+}
+
+function updateProgress(){
+  var ph=PHASES[state.phase];
+  if(state.submitted[state.phase])return;
+  var total=ph.questions.length;
+  var answered=ph.questions.filter(function(q){return (state.answers[q.id]||'').trim();}).length;
+  var fill=document.querySelector('.prog-bar-fill');
+  var lbl=document.querySelector('.prog-row span');
+  if(fill) fill.style.width=(answered/total*100)+'%';
+  if(lbl) lbl.textContent=answered+'/'+total+' answered';
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+load();
+render();
+</script>
+</body>
+</html>
